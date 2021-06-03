@@ -2,14 +2,15 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import copy
+from subprocess import call
 
 print('matplotlib: {}'.format(mpl.__version__))
+call("rm -r tmp")
 
 # Generates list from range (-4 --> 4) with 9 values
 xvals = np.linspace(-4,4,9)
 yvals = np.linspace(-3, 3, 7)
 xygrid = np.column_stack([[x,y] for x in xvals for y in yvals])
-
 
 # Apply Linear Transform
 #a = np.column_stack([[2,1],[-1,1]])
@@ -18,37 +19,19 @@ xygrid = np.column_stack([[x,y] for x in xvals for y in yvals])
 
 # Colors every point in grid by its xy position
 def colorizer(x,y):
-    r = min(1, 1-y/3)
-    g = min(1, 1 + y / 3)
+    r = min(1, 1 - y/3)
+    g = min(1, 1 + y/3)
     b = 1/4 + x/16
     return (r,g,b)
 
 colors = list(map(colorizer, xygrid[0], xygrid[1]))
 
 '''
-plt.figure(figsize = (4,4), facecolor = "w")
-plt.scatter(xygrid[0], xygrid[1], s=144, c=colors, edgecolor = "none")
-
-# Sets axis limits
-
-plt.grid(True)
-plt.axis("equal")
-plt.title("Original grid in x-y space")
-
-plt.show()
-
-
-
-# Plot transformed grid points
-plt.figure(figsize = (4,4), facecolor = "w")
-plt.scatter(uvgrid[0], uvgrid[1], s = 144, c = colors, edgecolor = "none")
-plt.grid(True)
-plt.axis("equal")
-plt.title("Transformed grid in u-v space")
-
-plt.show()
+returns a list of incremented grid points, that follow the transformation 'a'
+@param: a --> linear transformation to be applied
+@param: points --> Initial grid representing linear space for 'a' to be applied to
+@param: nsteps --> number of increments to be taken
 '''
-
 
 def intermediate_transforms(a, points, nsteps = 30):
     # Makes nsteps + 1 grids of zeros in the shape of points
@@ -60,9 +43,17 @@ def intermediate_transforms(a, points, nsteps = 30):
 
     return transgrid
 
+'''
+creates image representing each plot
+@param: transarray --> list of all incremented cordinates
+@param: color --> list of colors for each cordinate
+@param: numTransform --> index of transformation currently performed
+@param: outdir --> directory to store images
+@param: figuredsize --> size of plotted images (in x in)
+@param: figuredpi --> resolution of image
+'''
 
-
-def make_plots(transarray, color, numTransform, maxval, outdir= "png-frames", figuresize = (4,4), figuredpi=150):
+def make_plots(transarray, color, numTransform, maxval, outdir= "png-frames", figuresize = (6,6), figuredpi=150):
     nsteps = transarray.shape[0]
     ndigits = len(str(nsteps))
     #maxval = np.abs(transarray.max())
@@ -72,8 +63,7 @@ def make_plots(transarray, color, numTransform, maxval, outdir= "png-frames", fi
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    # Saves images and compiles into directory
-
+    # Saves images and compiles into director
     plt.ioff()
     fig = plt.figure(figsize=figuresize, facecolor = "w")
     for j in range(nsteps):
@@ -96,6 +86,7 @@ if __name__ == "__main__":
     transformations = [np.eye(2) for x in range(num_transformations)]
     const = num_transformations
 
+    # Prompts user to input matrices for transformation
     while num_transformations > 0:
         for x in range(2):
             for y in range(2):
@@ -108,6 +99,7 @@ if __name__ == "__main__":
     steps = 30
     tmp_xygrid = copy.deepcopy(xygrid)
 
+    # For each 2 by 2 transformation, perform increments & find upper bound values
     for j in range(len(transformations)):
         transform = intermediate_transforms(transformations[-(j + 1)], tmp_xygrid, nsteps = steps)
         tmp = np.abs(transform.max())
@@ -121,5 +113,5 @@ if __name__ == "__main__":
         make_plots(transform, colors, i, maxval, outdir = "tmp")
         xygrid = transform[-1]
 
-    from subprocess import call
+
     call("cd tmp && magick convert -delay 10 frame-*.png ../animation.gif && explorer .", shell=True)
