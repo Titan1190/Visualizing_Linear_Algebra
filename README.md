@@ -1,2 +1,2 @@
 # Visualizing_Linear_Algebra
-A repository with various programs to help visualize &amp; play with transformations in linear algebra
+A repository dedicated to providing visualizations of Linear Algebra to better understand the subject
